@@ -38,7 +38,7 @@ module Rack
 
       headers = {}
       sub_response.each_header do |k, v|
-        headers[k] = v unless k.to_s =~ /cookie|content-length|transfer-encoding/i
+        headers[k] = v unless k.to_s =~ /content-length|transfer-encoding/i
       end
 
       [sub_response.code.to_i, headers, [sub_response.read_body]]
