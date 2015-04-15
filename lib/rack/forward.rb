@@ -24,7 +24,8 @@ module Rack
         sub_request.content_length = req.content_length
         sub_request.content_type = req.content_type
       end
-
+      
+      sub_request['X-Identity-Service'] = req.env['HTTP_X_IDENTITY_SERVICE_KEY']
       sub_request['X-Forwarded-For'] = (req.env['X-Forwarded-For'].to_s.split(/, */) + [req.env['REMOTE_ADDR']]).join(', ')
       sub_request['Accept'] = req.env['HTTP_ACCEPT']
       sub_request['Accept-Encoding'] = req.accept_encoding
