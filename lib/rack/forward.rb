@@ -33,7 +33,9 @@ module Rack
       sub_request['Cookie']  = req.env['HTTP_COOKIE']
       sub_request['Referer'] = req.referer
       
-      sub_response = Net::HTTP.start(uri.host, uri.port) do |http|
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true if uri.port == 443
+      sub_response = http.start do |http|
         http.request(sub_request)
       end
 
