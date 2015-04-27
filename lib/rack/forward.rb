@@ -41,10 +41,26 @@ module Rack
 
       headers = {}
       sub_response.each_header do |k, v|
-        headers[k] = v unless k.to_s =~ /content-length|transfer-encoding/i
+        if k.to_s =~ /set-cookie/i
+          headers[k] = cleanup_cookie(v)
+        else
+          headers[k] = v unless k.to_s =~ /content-length|transfer-encoding/i
+        end
       end
 
       [sub_response.code.to_i, headers, [sub_response.read_body]]
     end
+
+    private
+
+    # Removes path and expiration values from cookie.
+    def cleanup_cookie(cookie_val)
+      cleaned_val = cookie_val.gsub(/(path=[^,;]+[,;])|(expires=.*)/, ' ')
+      cleaned_val += " path=/"
+      cleaned_val.gsub!(/\s+/, ' ')
+
+      cleaned_val
+    end
+
   end
 end
