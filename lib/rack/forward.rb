@@ -43,7 +43,7 @@ module Rack
       headers = {}
       sub_response.each_header do |k, v|
         if k.to_s =~ /set-cookie/i
-          headers[k] = extract_cookie(v,)
+          headers[k] = extract_cookie(v)
         else
           headers[k] = v unless k.to_s =~ /content-length|transfer-encoding/i
         end
