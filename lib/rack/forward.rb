@@ -5,9 +5,10 @@ module Rack
   class Forward
     HTTP_METHODS = %w(GET HEAD PUT POST DELETE OPTIONS PATCH)
 
-    def initialize(app, &block)
+    def initialize(app, options = {}, &block)
       self.class.send(:define_method, :uri_for, &block)
       @app = app
+      @proxied_cookies = options[:cookies] || []
     end
 
     def call(env)
@@ -24,7 +25,7 @@ module Rack
         sub_request.content_length = req.content_length
         sub_request.content_type = req.content_type
       end
-      
+
       sub_request['X-Identity-Service-Key'] = req.env['HTTP_X_IDENTITY_SERVICE_KEY']
       sub_request['X-Forwarded-For'] = (req.env['X-Forwarded-For'].to_s.split(/, */) + [req.env['REMOTE_ADDR']]).join(', ')
       sub_request['Accept'] = req.env['HTTP_ACCEPT']
@@ -32,7 +33,7 @@ module Rack
       sub_request['Authorization']  = req.env['HTTP_AUTHORIZATION']
       sub_request['Cookie']  = req.env['HTTP_COOKIE']
       sub_request['Referer'] = req.referer
-      
+
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true if uri.port == 443
       sub_response = http.start do |http|
@@ -42,7 +43,7 @@ module Rack
       headers = {}
       sub_response.each_header do |k, v|
         if k.to_s =~ /set-cookie/i
-          headers[k] = cleanup_cookie(v)
+          headers[k] = extract_cookie(v,)
         else
           headers[k] = v unless k.to_s =~ /content-length|transfer-encoding/i
         end
@@ -54,12 +55,28 @@ module Rack
     private
 
     # Removes path and expiration values from cookie.
-    def cleanup_cookie(cookie_val)
+    # Restricts cookie to values specified in @proxied_cookies.
+    def extract_cookie(cookie_val)
       cleaned_val = cookie_val.gsub(/(path=[^,;]+[,;])|(expires=.*)/, ' ')
-      cleaned_val += " path=/"
       cleaned_val.gsub!(/\s+/, ' ')
 
-      cleaned_val
+      cookie = nil
+
+      if @proxied_cookies.empty?
+        cookie = cleaned_val
+      else
+        crumbs = []
+
+        @proxied_cookies.each do |key|
+          if match = cleaned_val.match(/#{key}=(?<val>(.*));/i)
+            crumbs << "#{key}=#{match[:val]};"
+          end
+        end
+
+        cookie = crumbs.join(' ')
+      end
+
+      return "#{cookie} path=/"
     end
 
   end
