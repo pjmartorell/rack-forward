@@ -9,6 +9,7 @@ module Rack
       self.class.send(:define_method, :uri_for, &block)
       @app = app
       @proxied_cookies = options[:cookies] || []
+      @timeout = options[:timeout] || 5
     end
 
     def call(env)
@@ -36,6 +37,10 @@ module Rack
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true if uri.port == 443
+
+      http.open_timeout = @timeout
+      http.read_timeout = @timeout
+
       sub_response = http.start do |http|
         http.request(sub_request)
       end
