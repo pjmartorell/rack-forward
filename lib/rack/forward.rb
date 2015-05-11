@@ -1,4 +1,5 @@
 require 'rack/forward/version'
+require 'rack/utils'
 require 'net/http'
 
 module Rack
@@ -9,6 +10,8 @@ module Rack
       self.class.send(:define_method, :uri_for, &block)
       @app = app
       @proxied_cookies = options[:cookies] || []
+      @domain = options[:domain] || nil
+      @secure = options[:secure] || false
       @timeout = options[:timeout] || 5
     end
 
@@ -46,13 +49,25 @@ module Rack
       end
 
       headers = {}
+      cookies = []
+
       sub_response.each_header do |k, v|
         if k.to_s =~ /set-cookie/i
-          headers[k] = extract_cookie(v)
+          cookies << v
         else
-          headers[k] = v unless k.to_s =~ /content-length|transfer-encoding/i
+          headers[k] = v unless k.to_s =~ /content-length|transfer-encoding|set-cookie/i
         end
       end
+
+      (0..cookies.length - 1).each do |idx|
+        k,v = extract_cookie(cookies[idx])
+
+        cookies[idx] = "#{k}=#{v}; path=/"
+        cookies[idx] << "; domain=#{@domain}" if @domain
+        cookies[idx] << "; secure" if @secure
+      end
+
+      headers['Set-Cookie'] = cookies.join('\n')
 
       [sub_response.code.to_i, headers, [sub_response.read_body]]
     end
@@ -65,23 +80,17 @@ module Rack
       cleaned_val = cookie_val.gsub(/(path=[^,;]+[,;])|(expires=.*)/, ' ')
       cleaned_val.gsub!(/\s+/, ' ')
 
-      cookie = nil
-
       if @proxied_cookies.empty?
-        cookie = cleaned_val
+        return ['', cleaned_val]
       else
-        crumbs = []
-
         @proxied_cookies.each do |key|
           if match = cleaned_val.match(/#{key}=(?<val>(.*));/i)
-            crumbs << "#{key}=#{match[:val]};"
+            return [key, match[:val]]
           end
         end
-
-        cookie = crumbs.join(' ')
       end
 
-      return "#{cookie} path=/"
+      return ['', '']
     end
 
   end
