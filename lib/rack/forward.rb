@@ -35,6 +35,7 @@ module Rack
       sub_request['Accept'] = req.env['HTTP_ACCEPT']
       sub_request['Accept-Encoding'] = req.accept_encoding
       sub_request['Authorization']  = req.env['HTTP_AUTHORIZATION']
+      sub_request['Access-Control-Allow-Origin'] = req.env['ACCESS_CONTROL_ALLOW_ORIGIN']
       sub_request['Cookie']  = req.env['HTTP_COOKIE']
       sub_request['Referer'] = req.referer
 
