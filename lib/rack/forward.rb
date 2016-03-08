@@ -70,7 +70,7 @@ module Rack
 
       headers['Set-Cookie'] = cookies.join('\n')
 
-      [sub_response.code.to_i, headers, [sub_response.read_body]]
+      [sub_response.code.to_i, headers, [sub_response.read_body.to_s]]
     end
 
     private
