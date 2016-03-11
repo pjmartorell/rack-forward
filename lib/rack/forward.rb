@@ -25,7 +25,13 @@ module Rack
       sub_request = Net::HTTP.const_get(method.capitalize).new("#{uri.path}#{"?" if uri.query}#{uri.query}")
 
       if sub_request.request_body_permitted? and req.body
-        sub_request.body_stream = req.body
+        case req.body
+        when String
+          sub_request.body = req.body
+        when IO, StringIO, File
+          sub_request.body_stream = req.body
+        end
+
         sub_request.content_length = req.content_length
       end
 
