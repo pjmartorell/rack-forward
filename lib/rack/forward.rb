@@ -27,10 +27,10 @@ module Rack
       if sub_request.request_body_permitted? and req.body
         sub_request.body_stream = req.body
         sub_request.content_length = req.content_length
+      end
 
-        if req.content_type
-          sub_request.content_type = req.content_type
-        end
+      if req.content_type
+        sub_request.content_type = req.content_type
       end
 
       sub_request['X-Identity-Service-Key'] = req.env['HTTP_X_IDENTITY_SERVICE_KEY']
