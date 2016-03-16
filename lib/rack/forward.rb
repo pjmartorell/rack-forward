@@ -33,10 +33,8 @@ module Rack
         end
       end
 
-      if req.content_length
-        sub_request.content_length = req.content_length
-      end
-      
+      sub_request.content_length = req.content_length
+
       if req.content_type
         sub_request.content_type = req.content_type
       end
