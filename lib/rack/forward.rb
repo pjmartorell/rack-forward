@@ -31,10 +31,12 @@ module Rack
         when IO, StringIO, File
           sub_request.body_stream = req.body
         end
-
-        sub_request.content_length = req.content_length
       end
 
+      if req.content_length
+        sub_request.content_length = req.content_length
+      end
+      
       if req.content_type
         sub_request.content_type = req.content_type
       end
