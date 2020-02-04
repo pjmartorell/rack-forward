@@ -13,6 +13,7 @@ module Rack
       @domain = options[:domain] || nil
       @secure = options[:secure] || false
       @timeout = options[:timeout] || 5
+      @custom_headers = options[:custom_headers] || []
     end
 
     def call(env)
@@ -38,6 +39,9 @@ module Rack
       sub_request['Access-Control-Allow-Origin'] = req.env['ACCESS_CONTROL_ALLOW_ORIGIN']
       sub_request['Cookie']  = req.env['HTTP_COOKIE']
       sub_request['Referer'] = req.referer
+      @custom_headers.each do |header|
+        sub_request[header] = req.env["HTTP_#{header.tr('-', '_').upcase}"]
+      end
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true if uri.port == 443
